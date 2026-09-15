@@ -38,4 +38,23 @@ interface CacheInterface
      * Flush all items associated with currently active tags.
      */
     public function flushTags(): bool;
+
+    /**
+     * Get an atomic lock instance for coordinating concurrent tasks.
+     *
+     * @param string $name Lock identifier
+     * @param int $seconds Lock expiration TTL in seconds (0 = indefinite until released)
+     * @param string|null $owner Optional custom owner token
+     */
+    public function lock(string $name, int $seconds = 0, ?string $owner = null): \LiteCache\Lock\LockInterface;
+
+    /**
+     * Get an item from cache or compute it under an atomic lock to prevent Cache Stampede (Dogpile Effect).
+     *
+     * @param string $key
+     * @param int|DateInterval|null $ttl
+     * @param callable(): mixed $callback
+     * @param int $lockTimeoutSeconds
+     */
+    public function rememberWithLock(string $key, int|DateInterval|null $ttl, callable $callback, int $lockTimeoutSeconds = 5): mixed;
 }

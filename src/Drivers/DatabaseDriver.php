@@ -172,6 +172,30 @@ class DatabaseDriver implements CacheInterface
         return true;
     }
 
+    public function lock(string $name, int $seconds = 0, ?string $owner = null): \LiteCache\Lock\LockInterface
+    {
+        return new \LiteCache\Lock\DatabaseLock($this->pdo, $this->table . '_locks', $name, $seconds, $owner);
+    }
+
+    public function rememberWithLock(string $key, int|DateInterval|null $ttl, callable $callback, int $lockTimeoutSeconds = 5): mixed
+    {
+        $val = $this->get($key);
+        if ($val !== null) {
+            return $val;
+        }
+
+        return $this->lock("lock:{$key}", $lockTimeoutSeconds)->block($lockTimeoutSeconds, function () use ($key, $ttl, $callback) {
+            $cached = $this->get($key);
+            if ($cached !== null) {
+                return $cached;
+            }
+
+            $computed = $callback();
+            $this->set($key, $computed, $ttl);
+            return $computed;
+        });
+    }
+
     private function resolveExpiration(int|DateInterval|null $ttl): ?int
     {
         if ($ttl === null) {

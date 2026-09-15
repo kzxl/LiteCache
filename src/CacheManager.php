@@ -68,4 +68,19 @@ class CacheManager
     {
         return self::getInstance()->tags($tags);
     }
+
+    public static function lock(string $name, int $seconds = 0, ?string $owner = null): \LiteCache\Lock\LockInterface
+    {
+        return self::getInstance()->lock($name, $seconds, $owner);
+    }
+
+    public static function rememberWithLock(string $key, int|\DateInterval|null $ttl, callable $callback, int $lockTimeoutSeconds = 5): mixed
+    {
+        return self::getInstance()->rememberWithLock($key, $ttl, $callback, $lockTimeoutSeconds);
+    }
+
+    public static function psr16(?CacheInterface $cache = null): \LiteCache\Adapter\Psr16Adapter
+    {
+        return new \LiteCache\Adapter\Psr16Adapter($cache ?? self::getInstance());
+    }
 }

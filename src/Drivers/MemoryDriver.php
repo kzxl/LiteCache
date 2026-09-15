@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LiteCache\Drivers;
 
+use ArrayObject;
 use DateInterval;
 use DateTimeImmutable;
 use LiteCache\CacheInterface;
@@ -14,10 +15,15 @@ use LiteCache\CacheInterface;
  */
 class MemoryDriver implements CacheInterface
 {
-    /** @var array<string, array{val: mixed, exp: ?int, tags: string[]}> */
-    private array $storage = [];
+    /** @var ArrayObject<string, array{val: mixed, exp: ?int, tags: string[]}> */
+    private ArrayObject $storage;
     /** @var string[] */
     private array $activeTags = [];
+
+    public function __construct(?ArrayObject $storage = null)
+    {
+        $this->storage = $storage ?? new ArrayObject();
+    }
 
     public function get(string $key, mixed $default = null): mixed
     {
@@ -53,7 +59,7 @@ class MemoryDriver implements CacheInterface
 
     public function clear(): bool
     {
-        $this->storage = [];
+        $this->storage->exchangeArray([]);
         return true;
     }
 
@@ -103,13 +109,43 @@ class MemoryDriver implements CacheInterface
             return false;
         }
 
+        $toDelete = [];
         foreach ($this->storage as $key => $item) {
             $matching = array_intersect($this->activeTags, $item['tags']);
             if (!empty($matching)) {
-                unset($this->storage[$key]);
+                $toDelete[] = $key;
             }
         }
+
+        foreach ($toDelete as $key) {
+            unset($this->storage[$key]);
+        }
+
         return true;
+    }
+
+    public function lock(string $name, int $seconds = 0, ?string $owner = null): \LiteCache\Lock\LockInterface
+    {
+        return new \LiteCache\Lock\MemoryLock($name, $seconds, $owner);
+    }
+
+    public function rememberWithLock(string $key, int|DateInterval|null $ttl, callable $callback, int $lockTimeoutSeconds = 5): mixed
+    {
+        $val = $this->get($key);
+        if ($val !== null) {
+            return $val;
+        }
+
+        return $this->lock("lock:{$key}", $lockTimeoutSeconds)->block($lockTimeoutSeconds, function () use ($key, $ttl, $callback) {
+            $cached = $this->get($key);
+            if ($cached !== null) {
+                return $cached;
+            }
+
+            $computed = $callback();
+            $this->set($key, $computed, $ttl);
+            return $computed;
+        });
     }
 
     private function resolveExpiration(int|DateInterval|null $ttl): ?int
