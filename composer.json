@@ -1,0 +1,51 @@
+{
+    "name": "kzxl/lite-cache",
+    "description": "Ultra-lightweight, zero-dependency, high-performance Caching engine for PHP 8.2+ with OpCache, SQLite/MySQL, In-Memory drivers and Tagged invalidation.",
+    "type": "library",
+    "license": "MIT",
+    "homepage": "https://github.com/kzxl/LiteCache",
+    "support": {
+        "issues": "https://github.com/kzxl/LiteCache/issues",
+        "source": "https://github.com/kzxl/LiteCache"
+    },
+    "authors": [
+        {
+            "name": "Phong Vo",
+            "email": "phong.vo@kzxl.com"
+        }
+    ],
+    "keywords": [
+        "cache",
+        "caching",
+        "opcache",
+        "memory-cache",
+        "sqlite-cache",
+        "fast",
+        "tagged-cache",
+        "php82",
+        "zero-dependency"
+    ],
+    "minimum-stability": "stable",
+    "replace": {
+        "kzxl/litecache": "self.version"
+    },
+    "require": {
+        "php": ">=8.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "LiteCache\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LiteCache\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit --colors=always"
+    }
+}
